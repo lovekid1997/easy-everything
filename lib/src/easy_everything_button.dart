@@ -1,9 +1,11 @@
+library easy_everything;
+
 import 'package:flutter/material.dart';
 
 class EasyEverythingButton extends StatefulWidget {
   final Widget child;
 
-  const EasyEverythingButton({Key key, this.child}) : super(key: key);
+  const EasyEverythingButton({required this.child});
   @override
   _EasyEverythingButtonState createState() => _EasyEverythingButtonState();
 }
