@@ -6,7 +6,6 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -20,13 +19,32 @@ class MyApp extends StatelessWidget {
 }
 
 class MyExample extends StatelessWidget {
+  final EasyEverythingButtonController controller =
+      EasyEverythingButtonController();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SizedBox.expand(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [],
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 0),
+              child: EasyEverythingButton(
+                controller: controller,
+                onTap: () async {
+                  controller.start();
+                  await Future.delayed(Duration(seconds: 4));
+                  controller.success();
+                  await Future.delayed(Duration(seconds: 4));
+                  controller.stop();
+                },
+                label: 'sdasdasdaszxcjzxklj',
+                iconRight: Icons.ac_unit,
+                iconLeft: Icons.add,
+              ),
+            )
+          ],
         ),
       ),
     );
