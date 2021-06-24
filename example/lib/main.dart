@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:easy_everything/easy_everything.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 void main() {
   runApp(MyApp());
@@ -21,6 +22,8 @@ class MyApp extends StatelessWidget {
 class MyExample extends StatelessWidget {
   final EasyEverythingButtonController controller =
       EasyEverythingButtonController();
+
+  final duration = 800;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -32,14 +35,18 @@ class MyExample extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 0),
               child: EasyEverythingButton(
                 controller: controller,
+                durationAnimation: duration,
+                widgetLoading: SpinKitSquareCircle(
+                  color: Colors.white,
+                  size: 20,
+                ),
                 onTap: () async {
                   controller.start();
-                  await Future.delayed(Duration(seconds: 4));
+                  await fetchData();
                   controller.success();
-                  await Future.delayed(Duration(seconds: 4));
+                  await Future.delayed(Duration(milliseconds: duration));
                   controller.stop();
                 },
-                label: 'sdasdasdaszxcjzxklj',
                 iconRight: Icons.ac_unit,
                 iconLeft: Icons.add,
               ),
@@ -48,5 +55,10 @@ class MyExample extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> fetchData() async {
+    await Future.delayed(Duration(seconds: 2));
+    return;
   }
 }

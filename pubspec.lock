@@ -8,13 +8,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.5.0"
-  auto_size_text:
+  auto_size_text_pk:
     dependency: "direct main"
     description:
-      name: auto_size_text
+      name: auto_size_text_pk
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "3.0.0-nullsafety.0"
+    version: "3.0.0"
   boolean_selector:
     dependency: transitive
     description:
@@ -62,13 +62,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  flutter_spinkit:
-    dependency: "direct main"
-    description:
-      name: flutter_spinkit
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "5.0.0"
   flutter_svg:
     dependency: "direct main"
     description:
@@ -81,6 +74,13 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  lint:
+    dependency: "direct dev"
+    description:
+      name: lint
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.5.3"
   matcher:
     dependency: transitive
     description:

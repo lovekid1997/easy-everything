@@ -1,6 +1,5 @@
-import 'package:auto_size_text/auto_size_text.dart';
+import 'package:auto_size_text_pk/auto_size_text_pk.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -70,9 +69,25 @@ class EasyEverythingButton extends StatefulWidget {
   final double? paddingIconRightLabel;
 
   final Color? colorIconLeft;
+
   final Color? colorIconRight;
 
+  ///Size(size, size)
   final double sizeLoading;
+
+  final double strokeWidth;
+
+  final Color colorLoading;
+
+  /// size widget loading should size = 20
+  /// if null show loading default CircularProgressIndicator
+  final Widget? widgetLoading;
+
+  final Color colorIconError;
+  final Color colorIconSucess;
+  final Color colorBackgroundError;
+  final Color colorBackgroundSuccess;
+
   const EasyEverythingButton({
     required this.controller,
     this.label = 'This is button',
@@ -83,7 +98,7 @@ class EasyEverythingButton extends StatefulWidget {
     this.shadowColor,
     this.elevation,
     this.borderRadius = 15,
-    this.durationAnimation = 1000,
+    this.durationAnimation = 800,
     this.enableButton = false,
     this.onTap,
     this.sizeIconLeft = 24,
@@ -97,6 +112,13 @@ class EasyEverythingButton extends StatefulWidget {
     this.colorIconLeft,
     this.colorIconRight,
     this.sizeLoading = 18,
+    this.strokeWidth = 2,
+    this.colorLoading = Colors.white,
+    this.widgetLoading,
+    this.colorIconError = Colors.white,
+    this.colorIconSucess = Colors.white,
+    this.colorBackgroundError = Colors.red,
+    this.colorBackgroundSuccess = Colors.green,
   }) : assert(!(sizeLoading > height / 2),
             'load size no larger than split height 2');
 
@@ -108,22 +130,22 @@ class _EasyEverythingButtonState extends State<EasyEverythingButton>
     with TickerProviderStateMixin {
   final BehaviorSubject<StatusButton> _subjectStatusButton =
       BehaviorSubject<StatusButton>.seeded(StatusButton.loaded);
-  late Animation _bounceIconAnimation;
-  late AnimationController _bounceIconController;
+  late Animation<double> _resizeIconAnimation;
+  late AnimationController _resizeIconController;
 
   //
-  late Animation _resizeAnimation;
+  late Animation<double> _resizeAnimation;
   late AnimationController _resizeController;
   //
   late AnimationController _borderController;
-  late Animation _borderAnimation;
+  late Animation<BorderRadius> _borderAnimation;
   //
   late AnimationController _bouncerController;
-  late Animation _bouncerAnimation;
+  late Animation<double> _bouncerAnimation;
   @override
   void dispose() {
     _subjectStatusButton.close();
-    _bounceIconController.dispose();
+    _resizeIconController.dispose();
     _resizeController.dispose();
     _borderController.dispose();
     super.dispose();
@@ -131,13 +153,13 @@ class _EasyEverythingButtonState extends State<EasyEverythingButton>
 
   @override
   void initState() {
-    _bounceIconController = AnimationController(
+    _resizeIconController = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: widget.durationAnimation),
     );
-    _bounceIconAnimation = Tween<double>(begin: widget.sizeIconLeft, end: 0)
+    _resizeIconAnimation = Tween<double>(begin: widget.sizeIconLeft, end: 0)
         .animate(CurvedAnimation(
-            parent: _bounceIconController, curve: Curves.easeInOutCirc));
+            parent: _resizeIconController, curve: Curves.easeInOutCirc));
 
     //
     _borderController = AnimationController(
@@ -148,7 +170,6 @@ class _EasyEverythingButtonState extends State<EasyEverythingButton>
             end: BorderRadius.circular(widget.height / 2))
         .animate(_borderController);
     _borderAnimation.addListener(() {
-      print('val1 ${_borderAnimation.value}');
       setState(() {});
     });
 
@@ -160,13 +181,12 @@ class _EasyEverythingButtonState extends State<EasyEverythingButton>
         CurvedAnimation(
             parent: _resizeController, curve: Curves.easeInOutCirc));
     _resizeAnimation.addListener(() {
-      print('val ${_resizeAnimation.value}');
-      print('_bounceIconAnimation.value ${_bounceIconAnimation.value}');
       setState(() {});
     });
     _resizeAnimation.addStatusListener((AnimationStatus state) {
-      print('AnimationStatus $state');
-      if (state == AnimationStatus.completed) {
+      if (state == AnimationStatus.completed &&
+          _subjectStatusButton.value != StatusButton.success &&
+          _subjectStatusButton.value != StatusButton.error) {
         _subjectStatusButton.sink.add(StatusButton.loading);
       }
     });
@@ -182,7 +202,7 @@ class _EasyEverythingButtonState extends State<EasyEverythingButton>
     });
 
     //controller button
-    widget.controller.addListeners(_start, _stop, _success, _error, _reset);
+    widget.controller.addListeners(_start, _stop, _success, _error);
 
     super.initState();
   }
@@ -190,10 +210,24 @@ class _EasyEverythingButtonState extends State<EasyEverythingButton>
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    var _success = Container(
+    final _error = Container(
       alignment: FractionalOffset.center,
       decoration: BoxDecoration(
-        color: Colors.yellow,
+        color: widget.colorBackgroundError,
+        borderRadius:
+            BorderRadius.all(Radius.circular(_bouncerAnimation.value / 2)),
+      ),
+      width: _bouncerAnimation.value,
+      height: _bouncerAnimation.value,
+      child: Icon(
+        Icons.error,
+        color: widget.colorIconError,
+      ),
+    );
+    final _success = Container(
+      alignment: FractionalOffset.center,
+      decoration: BoxDecoration(
+        color: widget.colorBackgroundSuccess,
         borderRadius:
             BorderRadius.all(Radius.circular(_bouncerAnimation.value / 2)),
       ),
@@ -201,17 +235,22 @@ class _EasyEverythingButtonState extends State<EasyEverythingButton>
       height: _bouncerAnimation.value,
       child: Icon(
         Icons.check,
-        color: Colors.white,
+        color: widget.colorIconSucess,
       ),
     );
-    var stream = StreamBuilder<StatusButton>(
+    final stream = StreamBuilder<StatusButton>(
       stream: _subjectStatusButton,
       builder: (context, AsyncSnapshot<Object?> snapshot) {
         final Object? status = snapshot.data;
         return AnimatedSwitcher(
-          duration: Duration(milliseconds: 300),
+          duration: const Duration(milliseconds: 250),
           child: status == StatusButton.loading
-              ? _Loading(size: widget.sizeLoading)
+              ? _Loading(
+                  size: widget.sizeLoading,
+                  colorLoading: widget.colorLoading,
+                  strokeWidth: widget.strokeWidth,
+                  widgetLoading: widget.widgetLoading,
+                )
               : _content(),
         );
       },
@@ -222,7 +261,7 @@ class _EasyEverythingButtonState extends State<EasyEverythingButton>
         disabledColor: theme.disabledColor,
         child: ElevatedButton(
           style: ButtonStyle(
-            padding: MaterialStateProperty.all(EdgeInsets.all(0)),
+            padding: MaterialStateProperty.all(const EdgeInsets.all(0)),
             overlayColor: MaterialStateProperty.all(
                 widget.overlayColor ?? theme.hoverColor),
             elevation: MaterialStateProperty.all(widget.elevation),
@@ -249,42 +288,48 @@ class _EasyEverythingButtonState extends State<EasyEverythingButton>
         ),
       ),
     );
-    return Container(
-      height: widget.height,
-      child:
-          _subjectStatusButton.value == StatusButton.success ? _success : _btn,
-    );
+    return SizedBox(
+        height: widget.height,
+        child: StreamBuilder<StatusButton>(
+            stream: _subjectStatusButton,
+            builder: (context, AsyncSnapshot<Object?> snapshot) {
+              return snapshot.data == StatusButton.success
+                  ? _success
+                  : snapshot.data == StatusButton.error
+                      ? _error
+                      : _btn;
+            }));
   }
 
-  _buildIconLeft() {
-    if (widget.iconLeft == null && widget.iconPathLeft == null)
-      return SizedBox.shrink();
-    else if (widget.iconLeft != null) {
+  Widget _buildIconLeft() {
+    if (widget.iconLeft == null && widget.iconPathLeft == null) {
+      return const SizedBox.shrink();
+    } else if (widget.iconLeft != null) {
       return Padding(
         padding: EdgeInsets.only(right: widget.paddingIconLeftLabel ?? 0),
         child: Icon(
           widget.iconLeft,
-          size: _bounceIconAnimation.value,
+          size: _resizeIconAnimation.value,
           color: widget.colorIconLeft,
         ),
       );
     } else {
       return Padding(
         padding: EdgeInsets.only(right: widget.paddingIconLeftLabel ?? 0),
-        child: widget.iconPathLeft!.loadImage(size: _bounceIconAnimation.value),
+        child: widget.iconPathLeft!.loadImage(size: _resizeIconAnimation.value),
       );
     }
   }
 
-  _buildIconRight() {
-    if (widget.iconRight == null && widget.iconPathRight == null)
-      return SizedBox.shrink();
-    else if (widget.iconRight != null) {
+  Widget _buildIconRight() {
+    if (widget.iconRight == null && widget.iconPathRight == null) {
+      return const SizedBox.shrink();
+    } else if (widget.iconRight != null) {
       return Padding(
         padding: EdgeInsets.only(right: widget.paddingIconRightLabel ?? 0),
         child: Icon(
           widget.iconRight,
-          size: _bounceIconAnimation.value,
+          size: _resizeIconAnimation.value,
           color: widget.colorIconRight,
         ),
       );
@@ -292,7 +337,7 @@ class _EasyEverythingButtonState extends State<EasyEverythingButton>
       return Padding(
         padding: EdgeInsets.only(right: widget.paddingIconRightLabel ?? 0),
         child:
-            widget.iconPathRight!.loadImage(size: _bounceIconAnimation.value),
+            widget.iconPathRight!.loadImage(size: _resizeIconAnimation.value),
       );
     }
   }
@@ -308,11 +353,10 @@ class _EasyEverythingButtonState extends State<EasyEverythingButton>
             child: AutoSizeText(
               widget.label,
               style: widget.style,
-              minFontSize: 0,
               softWrap: true,
               textAlign: TextAlign.center,
               maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+              overflow: TextOverflow.fade,
             ),
           ),
           _buildIconRight()
@@ -321,28 +365,29 @@ class _EasyEverythingButtonState extends State<EasyEverythingButton>
     );
   }
 
-  _start() {
-    _bounceIconController.forward();
+  void _start() {
+    _resizeIconController.forward();
     _resizeController.forward();
     _borderController.forward();
   }
 
-  _stop() {
+  void _stop() {
     _subjectStatusButton.sink.add(StatusButton.loaded);
     _resizeController.reverse();
     _borderController.reverse();
-    _bounceIconController.reverse();
+    _resizeIconController.reverse();
+    _bouncerController.reset();
   }
 
-  _success() {
+  void _success() {
     _subjectStatusButton.sink.add(StatusButton.success);
     _bouncerController.forward();
-    print('StatusButton ${_subjectStatusButton.value}');
   }
 
-  _error() {}
-
-  _reset() {}
+  void _error() {
+    _subjectStatusButton.sink.add(StatusButton.error);
+    _bouncerController.forward();
+  }
 }
 
 class EasyEverythingButtonController {
@@ -350,19 +395,13 @@ class EasyEverythingButtonController {
   late VoidCallback _stopListener;
   late VoidCallback _successListener;
   late VoidCallback _errorListener;
-  late VoidCallback _resetListener;
 
-  addListeners(
-      VoidCallback startListener,
-      VoidCallback stopListener,
-      VoidCallback successListener,
-      VoidCallback errorListener,
-      VoidCallback resetListener) {
+  void addListeners(VoidCallback startListener, VoidCallback stopListener,
+      VoidCallback successListener, VoidCallback errorListener) {
     _startListener = startListener;
     _stopListener = stopListener;
     _successListener = successListener;
     _errorListener = errorListener;
-    _resetListener = resetListener;
   }
 
   /// Notify listeners to start the loading animation
@@ -384,20 +423,10 @@ class EasyEverythingButtonController {
   void error() {
     _errorListener();
   }
-
-  /// Notify listeners to start the reset animation
-  void reset() {
-    _resetListener();
-  }
 }
 
 extension ImageHelper on String {
-  Widget loadImage(
-      {double? width, double? height, double? size, Color? color}) {
-    if (size != null && size > 0) {
-      width = size;
-      height = size;
-    }
+  Widget loadImage({required double size, Color? color}) {
     // if (contains('http')) {
     //   return CachedNetworkImage(
     //     imageUrl: this,
@@ -409,10 +438,10 @@ extension ImageHelper on String {
     // }
 
     if (contains('.svg')) {
-      var img = SvgPicture.asset(
+      final img = SvgPicture.asset(
         this,
-        width: width ?? 24,
-        height: height ?? 24,
+        width: size,
+        height: size,
         color: color,
       );
       return img;
@@ -421,8 +450,8 @@ extension ImageHelper on String {
     if (contains('.png')) {
       return Image.asset(
         this,
-        width: width,
-        height: height,
+        width: size,
+        height: size,
         color: color,
       );
     }
@@ -433,13 +462,25 @@ extension ImageHelper on String {
 
 class _Loading extends StatelessWidget {
   final double size;
-
-  const _Loading({Key? key, required this.size}) : super(key: key);
+  final Color colorLoading;
+  final double strokeWidth;
+  final Widget? widgetLoading;
+  const _Loading({
+    Key? key,
+    required this.size,
+    required this.colorLoading,
+    required this.strokeWidth,
+    this.widgetLoading,
+  }) : super(key: key);
   @override
   Widget build(BuildContext context) {
-    return SpinKitCircle(
-      size: size,
-      color: Colors.white,
-    );
+    return widgetLoading ??
+        SizedBox.fromSize(
+          size: Size(size, size),
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(colorLoading),
+            strokeWidth: strokeWidth,
+          ),
+        );
   }
 }
