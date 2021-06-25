@@ -5,9 +5,9 @@ import 'package:rxdart/rxdart.dart';
 
 enum StatusButton { loaded, loading, success, error }
 
-class EasyEverythingButton extends StatefulWidget {
+class RoundedLoadingButtonGradient extends StatefulWidget {
   /// Button controller, now required
-  final EasyEverythingButtonController controller;
+  final RoundedLoadingButtonGradientController controller;
 
   ///child label button
   final String label;
@@ -40,7 +40,7 @@ class EasyEverythingButton extends StatefulWidget {
   final int durationAnimation;
 
   ///enable button = false is on tap not available
-  final bool enableButton;
+  final bool disableButton;
 
   ///size icon left
   final double sizeIconLeft;
@@ -88,7 +88,25 @@ class EasyEverythingButton extends StatefulWidget {
   final Color colorBackgroundError;
   final Color colorBackgroundSuccess;
 
-  const EasyEverythingButton({
+  ///if gradient != null, use gradient color into button
+  final Gradient? gradient;
+
+  /// if disableButton = true,
+  final Color? disableColor;
+
+  /// gradientSucess != null, background icon success is gradient
+  final Gradient? gradientSucess;
+
+  /// gradientError != null, background icon error is gradient
+  final Gradient? gradientError;
+
+  final IconData? iconSuccess;
+
+  final IconData? iconError;
+
+  final double? sizeSuccess;
+  final double? sizeError;
+  const RoundedLoadingButtonGradient({
     required this.controller,
     this.label = 'This is button',
     this.style = const TextStyle(),
@@ -99,7 +117,7 @@ class EasyEverythingButton extends StatefulWidget {
     this.elevation,
     this.borderRadius = 15,
     this.durationAnimation = 800,
-    this.enableButton = false,
+    this.disableButton = false,
     this.onTap,
     this.sizeIconLeft = 24,
     this.sizeIconRight = 24,
@@ -119,14 +137,22 @@ class EasyEverythingButton extends StatefulWidget {
     this.colorIconSucess = Colors.white,
     this.colorBackgroundError = Colors.red,
     this.colorBackgroundSuccess = Colors.green,
+    this.gradient,
+    this.disableColor,
+    this.gradientSucess,
+    this.gradientError,
+    this.iconSuccess = Icons.check,
+    this.iconError = Icons.error,
+    this.sizeSuccess = 24,
+    this.sizeError = 24,
   }) : assert(!(sizeLoading > height / 2),
             'load size no larger than split height 2');
 
   @override
-  _EasyEverythingButtonState createState() => _EasyEverythingButtonState();
+  _RoundedLoadingButtonGradientState createState() => _RoundedLoadingButtonGradientState();
 }
 
-class _EasyEverythingButtonState extends State<EasyEverythingButton>
+class _RoundedLoadingButtonGradientState extends State<RoundedLoadingButtonGradient>
     with TickerProviderStateMixin {
   final BehaviorSubject<StatusButton> _subjectStatusButton =
       BehaviorSubject<StatusButton>.seeded(StatusButton.loaded);
@@ -213,32 +239,38 @@ class _EasyEverythingButtonState extends State<EasyEverythingButton>
     final _error = Container(
       alignment: FractionalOffset.center,
       decoration: BoxDecoration(
-        color: widget.colorBackgroundError,
+        color:
+            widget.gradientError != null ? null : widget.colorBackgroundError,
+        gradient: widget.gradientError,
         borderRadius:
             BorderRadius.all(Radius.circular(_bouncerAnimation.value / 2)),
       ),
       width: _bouncerAnimation.value,
       height: _bouncerAnimation.value,
       child: Icon(
-        Icons.error,
+        widget.iconError,
         color: widget.colorIconError,
+        size: widget.sizeError,
       ),
     );
     final _success = Container(
       alignment: FractionalOffset.center,
       decoration: BoxDecoration(
-        color: widget.colorBackgroundSuccess,
+        color:
+            widget.gradientSucess != null ? null : widget.colorBackgroundError,
+        gradient: widget.gradientSucess,
         borderRadius:
             BorderRadius.all(Radius.circular(_bouncerAnimation.value / 2)),
       ),
       width: _bouncerAnimation.value,
       height: _bouncerAnimation.value,
       child: Icon(
-        Icons.check,
+        widget.iconSuccess,
         color: widget.colorIconSucess,
+        size: widget.sizeSuccess,
       ),
     );
-    final stream = StreamBuilder<StatusButton>(
+    final StreamBuilder<StatusButton> stream = StreamBuilder<StatusButton>(
       stream: _subjectStatusButton,
       builder: (context, AsyncSnapshot<Object?> snapshot) {
         final Object? status = snapshot.data;
@@ -258,14 +290,14 @@ class _EasyEverythingButtonState extends State<EasyEverythingButton>
     final _btn = SizedBox.fromSize(
       size: Size(_resizeAnimation.value, widget.height),
       child: ButtonTheme(
-        disabledColor: theme.disabledColor,
+        disabledColor: widget.disableColor ?? theme.disabledColor,
         child: ElevatedButton(
           style: ButtonStyle(
             padding: MaterialStateProperty.all(const EdgeInsets.all(0)),
             overlayColor: MaterialStateProperty.all(
                 widget.overlayColor ?? theme.hoverColor),
             elevation: MaterialStateProperty.all(widget.elevation),
-            backgroundColor: widget.enableButton
+            backgroundColor: widget.disableButton
                 ? null
                 : MaterialStateProperty.all(
                     widget.backgroundColor ?? theme.primaryColor),
@@ -277,7 +309,7 @@ class _EasyEverythingButtonState extends State<EasyEverythingButton>
               ),
             ),
           ),
-          onPressed: widget.enableButton
+          onPressed: widget.disableButton
               ? null
               : widget.onTap != null
                   ? () {
@@ -297,8 +329,37 @@ class _EasyEverythingButtonState extends State<EasyEverythingButton>
                   ? _success
                   : snapshot.data == StatusButton.error
                       ? _error
-                      : _btn;
+                      : widget.gradient != null
+                          ? contentWithGradient(child: stream)
+                          : _btn;
             }));
+  }
+
+  Widget contentWithGradient({required StreamBuilder<StatusButton> child}) {
+    return GestureDetector(
+      onTap: widget.disableButton
+          ? null
+          : widget.onTap != null
+              ? () {
+                  widget.onTap!();
+                }
+              : null,
+      child: SizedBox.fromSize(
+        size: Size(_resizeAnimation.value, widget.height),
+        child: Container(
+          width: _resizeAnimation.value,
+          height: widget.height,
+          decoration: BoxDecoration(
+            color: widget.disableButton
+                ? (widget.disableColor ?? Colors.grey.withOpacity(.5))
+                : null,
+            gradient: widget.disableButton ? null : widget.gradient,
+            borderRadius: _borderAnimation.value,
+          ),
+          child: child,
+        ),
+      ),
+    );
   }
 
   Widget _buildIconLeft() {
@@ -390,7 +451,7 @@ class _EasyEverythingButtonState extends State<EasyEverythingButton>
   }
 }
 
-class EasyEverythingButtonController {
+class RoundedLoadingButtonGradientController {
   late VoidCallback _startListener;
   late VoidCallback _stopListener;
   late VoidCallback _successListener;

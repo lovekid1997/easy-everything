@@ -1,5 +1,5 @@
+import 'package:easy_everything/rounded_loading_button_gradient.dart';
 import 'package:flutter/material.dart';
-import 'package:easy_everything/easy_everything.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 void main() {
@@ -20,8 +20,8 @@ class MyApp extends StatelessWidget {
 }
 
 class MyExample extends StatelessWidget {
-  final EasyEverythingButtonController controller =
-      EasyEverythingButtonController();
+  final RoundedLoadingButtonGradientController controller =
+      RoundedLoadingButtonGradientController();
 
   final duration = 800;
   @override
@@ -33,8 +33,9 @@ class MyExample extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 0),
-              child: EasyEverythingButton(
+              child: RoundedLoadingButtonGradient(
                 controller: controller,
+                disableButton: false,
                 durationAnimation: duration,
                 widgetLoading: SpinKitSquareCircle(
                   color: Colors.white,
@@ -43,7 +44,7 @@ class MyExample extends StatelessWidget {
                 onTap: () async {
                   controller.start();
                   await fetchData();
-                  controller.success();
+                  controller.error(); // or success
                   await Future.delayed(Duration(milliseconds: duration));
                   controller.stop();
                 },

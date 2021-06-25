@@ -1,6 +1,6 @@
-name: easy_everything
+name: rounded_loading_button_gradient
 description: A new Flutter package. Helping developers to build UI quickly, I try to build on existing widgets and make them useful and beautiful.
-version: 0.1.0
+version: 0.1.1
 homepage: https://github.com/lovekid1997/easy-everything
 
 environment:

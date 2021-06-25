@@ -1,3 +1,6 @@
+## [0.1.1]
+- Add gradient button
+
 ## [0.1.0]
 - Add description 
 ## [0.0.9]
